@@ -2,17 +2,24 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\CategoryController;
 
-Route::post('register', [AuthController::class, 'register']);
-Route::post('login', [AuthController::class, 'login']);
+Route::prefix('v1')->group(function () {
 
-Route::middleware('auth:sanctum')->group(function(){
-    
-    Route::apiResource('categories', CategoryController::class)->except(['destroy']);
-    Route::apiResource('items', ItemController::class)->except(['destroy']);
-    
-    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->middleware('role:admin');
-    Route::delete('items/{item}', [ItemController::class, 'destroy'])->middleware('role:admin');
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']); 
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+        // CRUD Categories
+        Route::apiResource('categories', CategoryController::class)->except(['destroy']);
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->middleware('role:admin');
+
+        // CRUD Items
+        Route::apiResource('items', ItemController::class)->except(['destroy']);
+        Route::delete('items/{item}', [ItemController::class, 'destroy'])->middleware('role:admin');
+        
+    });
+
 });
