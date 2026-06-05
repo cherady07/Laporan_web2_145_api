@@ -7,31 +7,48 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreItemRequest extends FormRequest{
-    public function authorize(){
+    public function authorize(): bool    {
         return true;
     }
-    public function rules(){
+    protected function prepareForValidation(): void  {
+        $input = $this->all();
+
+        array_walk_recursive($input, function (&$val) {
+            if (is_string($val)) {
+                $val = trim(strip_tags($val));
+            }
+        });
+        $this->merge($input);
+    }
+    public function rules(): array{
         return [
-            'name' => 'required|string|max:255',
-            'quantity' => 'required|integer|min:0',
-            'price' => 'required|numeric|min:0',
+            'name'        => 'required|string|max:255|unique:items,name',
+            'quantity'    => 'required|integer|min:0',
+            'price'       => 'required|numeric|min:0',
             'category_id' => 'required|exists:categories,id',
         ];
     }
-    public function messages(){
+    public function messages(): array{
         return [
-            'name.required' => 'Nama item wajib diisi.',
-            'quantity.integer' => 'Jumlah harus angka bulat.',
-            'quantity.min' => 'Jumlah tidak boleh negatif.',
-            'price.numeric' => 'Harga harus berupa angka.',
-            'category_id.exists' => 'Kategori tidak ditemukan.',
+            'name.required'        => 'Nama item wajib diisi.',
+            'name.string'          => 'Nama item harus berupa teks.',
+            'name.max'             => 'Nama item maksimal berisi 255 karakter.',
+            'name.unique'          => 'Nama item sudah terdaftar.', // Pesan jika nama barang kembar
+            'quantity.required'    => 'Jumlah item wajib diisi.',
+            'quantity.integer'     => 'Jumlah harus angka bulat.',
+            'quantity.min'         => 'Jumlah tidak boleh negatif.',
+            'price.required'       => 'Harga item wajib diisi.',
+            'price.numeric'        => 'Harga harus berupa angka.',
+            'price.min'            => 'Harga tidak boleh negatif.',
+            'category_id.required' => 'Kategori wajib dipilih.',
+            'category_id.exists'   => 'Kategori tidak ditemukan.',
         ];
     }
-    protected function failedValidation(Validator $validator) {
+    protected function failedValidation(Validator $validator): void{
         throw new HttpResponseException(
             response()->json([
-                'status' => 'error',
-                'data' => null,
+                'status'  => 'error',
+                'data'    => null,
                 'message' => $validator->errors()->first()
             ], 422)
         );
